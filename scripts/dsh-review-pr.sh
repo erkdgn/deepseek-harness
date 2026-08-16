@@ -11,6 +11,11 @@ set -euo pipefail
 
 PR_NUMBER="${PR_NUMBER:-}"
 MAX_DIFF_LINES="${MAX_DIFF_LINES:-2500}"
+# The whole prompt reaches dsh as a single shell-expanded positional argument
+# (the headless profile has no stdin or file input); Linux caps one execve()
+# argument at MAX_ARG_STRLEN, 128 KiB. This stays safely under that so a huge
+# diff fails the line-count budget above, not an opaque E2BIG from the kernel.
+MAX_PROMPT_BYTES="${MAX_PROMPT_BYTES:-100000}"
 DSH_TIMEOUT_SECONDS="${DSH_TIMEOUT_SECONDS:-600}"
 DSH_PROFILE="${DSH_PROFILE:-headless}"
 
@@ -47,8 +52,11 @@ if [ "$diff_lines" -gt "$MAX_DIFF_LINES" ]; then
   exit 0
 fi
 
-title="$(gh pr view "$PR_NUMBER" --json title --jq .title)"
-body="$(gh pr view "$PR_NUMBER" --json body --jq .body)"
+if ! title="$(gh pr view "$PR_NUMBER" --json title --jq .title)" \
+  || ! body="$(gh pr view "$PR_NUMBER" --json body --jq .body)"; then
+  comment "**DSH review skipped** — the pull request title or description could not be fetched. Review this change by hand."
+  exit 0
+fi
 
 # dsh keeps no history between runs: this prompt carries the entire context of
 # the review, and the diff is embedded literally rather than referenced.
@@ -69,6 +77,12 @@ body="$(gh pr view "$PR_NUMBER" --json body --jq .body)"
   printf '%s\n' '```'
 } > "$prompt_file"
 
+prompt_bytes="$(wc -c < "$prompt_file" | tr -d ' ')"
+if [ "$prompt_bytes" -gt "$MAX_PROMPT_BYTES" ]; then
+  comment "**DSH review skipped** — the review prompt is ${prompt_bytes} bytes, over the ${MAX_PROMPT_BYTES}-byte budget dsh's single command-line argument can safely carry. Review this change by hand."
+  exit 0
+fi
+
 status=0
 timeout "$DSH_TIMEOUT_SECONDS" dsh --profile "$DSH_PROFILE" "$(cat "$prompt_file")" \
   > "$report_file" 2> "$error_file" || status=$?
@@ -78,6 +92,8 @@ if [ "$status" -ne 0 ]; then
   cat "$error_file" >&2
   if [ "$status" -eq 124 ]; then
     comment "**DSH review failed** — the model did not answer within ${DSH_TIMEOUT_SECONDS}s. Review this change by hand."
+  elif [ "$status" -eq 126 ]; then
+    comment "**DSH review failed** — dsh could not be executed (exit 126), most likely the prompt exceeded the shell's argument-length limit despite the ${MAX_PROMPT_BYTES}-byte guard. Review this change by hand."
   else
     comment "**DSH review failed** — dsh exited with status ${status}. Review this change by hand."
   fi

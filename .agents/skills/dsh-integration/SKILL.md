@@ -143,6 +143,7 @@ Config değişikliklerini `--dump-config` ile doğrula, varsayma.
 | Variable (opsiyonel) | `DSH_PACKAGE_VERSION` | Sabitlenmiş `dsh` sürümü |
 | Variable (opsiyonel) | `DSH_ALLOWED_LABELS` | Triage'ın uygulayabileceği etiketler |
 | Variable (opsiyonel) | `MAX_DIFF_LINES` | Varsayılan 2500 |
+| Variable (opsiyonel) | `MAX_PROMPT_BYTES` | Varsayılan 100000 — aşağıya bak |
 | Variable (opsiyonel) | `DSH_REVIEW_TIMEOUT_SECONDS` / `DSH_TRIAGE_TIMEOUT_SECONDS` | Varsayılan 600 / 180 |
 
 **Kırıcı değişiklik:** secret adı daha önce `OLLAMA_API_KEY` idi; artık `DSH_PROVIDER_API_KEY`. Bu isimle daha önce bir secret ayarladıysan, workflow'ların çalışması için onu `DSH_PROVIDER_API_KEY` olarak yeniden eklemen gerekir.
@@ -151,12 +152,16 @@ Config değişikliklerini `--dump-config` ile doğrula, varsayma.
 
 `MAX_DIFF_LINES` üstündeki PR'lar atlanır ve "elle inceleme gerekiyor" yorumu bırakılır. `DSH_ALLOWED_LABELS`'ı repo'daki gerçek etiketlerle senkron tut.
 
+**`MAX_PROMPT_BYTES` neden var:** headless profilin stdin ya da dosya girişi yok — tüm prompt tek bir shell-genişletilmiş pozisyonel argüman olarak `dsh`'ye gider (`apps/cli/src/args.ts`'deki `.argument('[task...]', ...)`, kaynağından doğrulandı). Linux `execve()` çağrısında tek bir argümanı `MAX_ARG_STRLEN` (128 KiB) ile sınırlar; satır sayısı bütçesi düşük satır sayılı ama uzun satırlı (örn. minify edilmiş kod, lockfile) bir diff'i yakalamayabilir. Script, prompt'u oluşturduktan sonra byte sayısını `MAX_PROMPT_BYTES` ile karşılaştırıp aşarsa net bir "elle inceleme gerekiyor" yorumu bırakır; `dsh` yine de `exit 126` ile başarısız olursa (`E2BIG`) bu da ayrıca yakalanıp anlaşılır bir mesajla raporlanır.
+
 ### Bilinen sınırlar
 
-- **Gerçek bir model çağrısı CI'da henüz doğrulanmadı.** Script'lerin tüm dalları (diff boyutu, timeout, dsh hatası, boş rapor, etiket süzme) stub'larla çalıştırılarak doğrulandı; doğrulanmamış olan, gerçek provider'a giden istektir. İlk gerçek koşumda bootstrap'ta ince ayar gerekebilir.
+- **`DSH_PROVIDER_API_KEY` secret'ı ayarlanana kadar "DSH review" job'ı kırmızıdır.** Bu, bilinçli bir fail-loud davranışı — bootstrap script secret boşken hiçbir yorum bırakmadan `exit 1` ile durur, çünkü provider olmadan anlamlı bir rapor üretilemez. İlk gerçek CI koşumunda tam olarak bu şekilde gözlemlendi (bkz. workflow run logu); PR'ı bloklamaz (o job'un kendisi zaten "advisory"dir), ama repo sahibinin secret'ı eklemesi gerekir.
+- **Gerçek bir provider isteği ile uçtan uca bir koşum henüz gözlemlenmedi.** Script dallarının tümü (diff boyutu, prompt byte boyutu, `pr view`/`issue view` fetch hatası, timeout, dsh hatası/E2BIG, boş rapor, etiket süzme) stub'larla doğrulandı; ayrıca gerçek yayınlanmış `dsh` paketi bu profili gerçekten compose edip bir provider isteği gerçekten denedi (bu makine ağ politikası yüzünden `ollama.com`'a erişemedi, ama `dsh`'nin kendisi doğru şekilde denedi ve doğru exit code/stderr ile başarısız oldu). Secret eklendikten sonraki ilk gerçek başarılı koşum hâlâ gözlemlenmedi.
 - **Fork'tan açılan PR'lara secret verilmez**, bu yüzden review job'ı `head.repo.full_name == github.repository` koşuluyla atlanır.
 - **Review yorumu tek seferliktir**; her `synchronize`'da yeni yorum ekler, öncekini güncellemez.
 - **DSH developer preview'da** — `dsh plugin`, profil bootstrap ve config şeması değişebilir. Sürüm sabitle (`DSH_PACKAGE_VERSION`) ve her upstream güncellemesinden sonra `--dump-config` ile kontrol et.
+- **`.github/workflows/issue-lifecycle.yml` ve `issue-policy.yml` bu fork'ta çalışmaz** — bu iki workflow (bu PR'ın parçası değil, upstream'den miras) `owner: deepseek-harness`'a sabitlenmiş bir GitHub App'in `vars.DSH_ISSUE_APP_CLIENT_ID`/`secrets.DSH_ISSUE_APP_PRIVATE_KEY`'ini gerektiriyor; bu fork o App'in kimlik bilgilerine sahip değil ve `owner` alanı parametrik olmadığı için sahip de olamaz. DSH otomasyonuyla ilgisi yok, düzeltmesi bu PR'ın kapsamı dışında.
 
 ### Sonucu nasıl işle
 

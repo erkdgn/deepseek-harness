@@ -4,16 +4,30 @@
 # The model proposes; this script disposes. A suggestion survives only if it
 # appears both in $ALLOWED_LABELS and in `gh label list`, so an invented or
 # retired label is dropped instead of failing the job. Triage is advisory and
-# never blocks: every failure path exits 0 after saying what happened.
+# never blocks: every failure path posts a comment and exits 0.
 set -euo pipefail
 
 ISSUE_NUMBER="${ISSUE_NUMBER:-}"
 DSH_TIMEOUT_SECONDS="${DSH_TIMEOUT_SECONDS:-180}"
 DSH_PROFILE="${DSH_PROFILE:-headless}"
+# The whole prompt reaches dsh as a single shell-expanded positional argument
+# (the headless profile has no stdin or file input); Linux caps one execve()
+# argument at MAX_ARG_STRLEN, 128 KiB. This stays safely under that.
+MAX_PROMPT_BYTES="${MAX_PROMPT_BYTES:-100000}"
 # Keep this list in step with the repository's live labels; anything else is discarded.
 ALLOWED_LABELS="${ALLOWED_LABELS:-area/infra,area/tools,area/web,area/api,area/hooks,area/windows,area/planning,area/workflow,area/artifact}"
 
 [ -n "$ISSUE_NUMBER" ] || { echo "dsh-triage-issue: \$ISSUE_NUMBER is required." >&2; exit 1; }
+
+run_url="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-}/actions/runs/${GITHUB_RUN_ID:-}"
+
+comment() {
+  {
+    printf '%s\n' "$1"
+    printf '\n---\n'
+    printf '_Posted by the DSH triage job ([run](%s))._\n' "$run_url"
+  } | gh issue comment "$ISSUE_NUMBER" --body-file -
+}
 
 prompt_file="$(mktemp)"
 report_file="$(mktemp)"
@@ -21,8 +35,11 @@ error_file="$(mktemp)"
 existing_file="$(mktemp)"
 trap 'rm -f "$prompt_file" "$report_file" "$error_file" "$existing_file"' EXIT
 
-title="$(gh issue view "$ISSUE_NUMBER" --json title --jq .title)"
-body="$(gh issue view "$ISSUE_NUMBER" --json body --jq .body)"
+if ! title="$(gh issue view "$ISSUE_NUMBER" --json title --jq .title)" \
+  || ! body="$(gh issue view "$ISSUE_NUMBER" --json body --jq .body)"; then
+  comment "**DSH triage skipped** — the issue title or body could not be fetched. Triage this issue by hand."
+  exit 0
+fi
 
 allowed_list="$(printf '%s' "$ALLOWED_LABELS" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed '/^$/d' | sort -u)"
 
@@ -38,14 +55,31 @@ allowed_list="$(printf '%s' "$ALLOWED_LABELS" | tr ',' '\n' | sed 's/^[[:space:]
   printf 'Body:\n%s\n' "$body"
 } > "$prompt_file"
 
+prompt_bytes="$(wc -c < "$prompt_file" | tr -d ' ')"
+if [ "$prompt_bytes" -gt "$MAX_PROMPT_BYTES" ]; then
+  comment "**DSH triage skipped** — the triage prompt is ${prompt_bytes} bytes, over the ${MAX_PROMPT_BYTES}-byte budget dsh's single command-line argument can safely carry. Triage this issue by hand."
+  exit 0
+fi
+
 status=0
 timeout "$DSH_TIMEOUT_SECONDS" dsh --profile "$DSH_PROFILE" "$(cat "$prompt_file")" \
   > "$report_file" 2> "$error_file" || status=$?
 
-if [ "$status" -ne 0 ] || [ ! -s "$report_file" ]; then
+if [ "$status" -ne 0 ]; then
   echo "dsh-triage-issue: dsh exited $status" >&2
   cat "$error_file" >&2
-  echo "dsh-triage-issue: leaving the issue untriaged." >&2
+  if [ "$status" -eq 124 ]; then
+    comment "**DSH triage failed** — the model did not answer within ${DSH_TIMEOUT_SECONDS}s. Triage this issue by hand."
+  elif [ "$status" -eq 126 ]; then
+    comment "**DSH triage failed** — dsh could not be executed (exit 126), most likely the prompt exceeded the shell's argument-length limit despite the ${MAX_PROMPT_BYTES}-byte guard. Triage this issue by hand."
+  else
+    comment "**DSH triage failed** — dsh exited with status ${status}. Triage this issue by hand."
+  fi
+  exit 0
+fi
+
+if [ ! -s "$report_file" ]; then
+  comment "**DSH triage failed** — dsh returned an empty report. Triage this issue by hand."
   exit 0
 fi
 
@@ -72,15 +106,15 @@ else
   echo "dsh-triage-issue: no label survived validation."
 fi
 
-run_url="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-}/actions/runs/${GITHUB_RUN_ID:-}"
-{
-  printf '## DSH triage\n\n'
-  printf '%s\n\n' "$summary"
-  if [ "${#applied[@]}" -gt 0 ]; then
-    printf 'Labels applied: %s\n' "$(printf '`%s` ' "${applied[@]}")"
-  else
-    printf 'No label applied — nothing the model proposed matched this repository.\n'
-  fi
-  printf '\n---\n'
-  printf '_Posted by the DSH triage job ([run](%s)). An automated first pass, not a maintainer decision._\n' "$run_url"
-} | gh issue comment "$ISSUE_NUMBER" --body-file -
+if [ "${#applied[@]}" -gt 0 ]; then
+  labels_line="Labels applied: $(printf '`%s` ' "${applied[@]}")"
+else
+  labels_line='No label applied — nothing the model proposed matched this repository.'
+fi
+comment "## DSH triage
+
+$summary
+
+$labels_line
+
+_An automated first pass, not a maintainer decision._"

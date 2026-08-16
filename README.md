@@ -68,7 +68,7 @@ Under **Settings → Secrets and variables → Actions** on this repository:
 | Variable (optional) | `DSH_PROVIDER_API` | Wire protocol: `openai-completions` (default), `openai-responses`, or `anthropic-messages`. |
 | Variable (optional) | `DSH_MODEL_ID` | Defaults to `deepseek-v4-pro:0813`. |
 | Variable (optional) | `DSH_ALLOWED_LABELS` | Comma-separated labels triage may apply. Keep this in sync with this repository's real labels. |
-| Variable (optional) | `MAX_DIFF_LINES`, `DSH_REVIEW_TIMEOUT_SECONDS`, `DSH_TRIAGE_TIMEOUT_SECONDS` | Diff-size budget and per-job timeouts. |
+| Variable (optional) | `MAX_DIFF_LINES`, `MAX_PROMPT_BYTES`, `DSH_REVIEW_TIMEOUT_SECONDS`, `DSH_TRIAGE_TIMEOUT_SECONDS` | Diff-size budget, prompt-byte budget (below the shell's single-argument limit), and per-job timeouts. |
 
 Once the secret is set, open (or push to) a pull request or open an issue on this repository to see it run — check the Actions tab for the job's output.
 

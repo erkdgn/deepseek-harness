@@ -68,7 +68,7 @@ Bu repository'de **Settings → Secrets and variables → Actions** altında:
 | Variable (opsiyonel) | `DSH_PROVIDER_API` | Wire protokolü: `openai-completions` (varsayılan), `openai-responses` ya da `anthropic-messages`. |
 | Variable (opsiyonel) | `DSH_MODEL_ID` | Varsayılan `deepseek-v4-pro:0813`. |
 | Variable (opsiyonel) | `DSH_ALLOWED_LABELS` | Triage'ın uygulayabileceği etiketler, virgülle ayrılmış. Bunu bu repository'nin gerçek etiketleriyle senkron tut. |
-| Variable (opsiyonel) | `MAX_DIFF_LINES`, `DSH_REVIEW_TIMEOUT_SECONDS`, `DSH_TRIAGE_TIMEOUT_SECONDS` | Diff boyutu bütçesi ve job başına timeout süreleri. |
+| Variable (opsiyonel) | `MAX_DIFF_LINES`, `MAX_PROMPT_BYTES`, `DSH_REVIEW_TIMEOUT_SECONDS`, `DSH_TRIAGE_TIMEOUT_SECONDS` | Diff boyutu bütçesi, prompt byte bütçesi (shell'in tek argüman sınırının altında) ve job başına timeout süreleri. |
 
 Secret ayarlandıktan sonra, çalıştığını görmek için bu repository'de bir pull request aç (ya da bir tanesine push et) ya da bir issue aç — job'un çıktısı için Actions sekmesine bak.
 

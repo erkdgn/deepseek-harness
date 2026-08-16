@@ -50,5 +50,6 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           DSH_PROVIDER_API_KEY: ${{ secrets.DSH_PROVIDER_API_KEY }}
           MAX_DIFF_LINES: ${{ vars.MAX_DIFF_LINES || '2500' }}
+          MAX_PROMPT_BYTES: ${{ vars.MAX_PROMPT_BYTES || '100000' }}
           DSH_TIMEOUT_SECONDS: ${{ vars.DSH_REVIEW_TIMEOUT_SECONDS || '600' }}
         run: ./scripts/dsh-review-pr.sh

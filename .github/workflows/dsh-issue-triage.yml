@@ -47,5 +47,6 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           DSH_PROVIDER_API_KEY: ${{ secrets.DSH_PROVIDER_API_KEY }}
           ALLOWED_LABELS: ${{ vars.DSH_ALLOWED_LABELS }}
+          MAX_PROMPT_BYTES: ${{ vars.MAX_PROMPT_BYTES || '100000' }}
           DSH_TIMEOUT_SECONDS: ${{ vars.DSH_TRIAGE_TIMEOUT_SECONDS || '180' }}
         run: ./scripts/dsh-triage-issue.sh

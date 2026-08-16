@@ -68,7 +68,7 @@ pnpm dsh web
 | Variable（可选） | `DSH_PROVIDER_API` | 传输协议：`openai-completions`（默认）、`openai-responses` 或 `anthropic-messages`。 |
 | Variable（可选） | `DSH_MODEL_ID` | 默认为 `deepseek-v4-pro:0813`。 |
 | Variable（可选） | `DSH_ALLOWED_LABELS` | 分类可应用的标签，逗号分隔。请与本仓库真实的标签保持同步。 |
-| Variable（可选） | `MAX_DIFF_LINES`、`DSH_REVIEW_TIMEOUT_SECONDS`、`DSH_TRIAGE_TIMEOUT_SECONDS` | diff 大小预算与各 job 的超时时间。 |
+| Variable（可选） | `MAX_DIFF_LINES`、`MAX_PROMPT_BYTES`、`DSH_REVIEW_TIMEOUT_SECONDS`、`DSH_TRIAGE_TIMEOUT_SECONDS` | diff 大小预算、prompt 字节预算（低于 shell 单参数长度上限）与各 job 的超时时间。 |
 
 设置好 secret 后，在本仓库打开（或推送到）一个 pull request，或者新开一个 issue，即可看到它运行——在 Actions 标签页查看该 job 的输出。
 
