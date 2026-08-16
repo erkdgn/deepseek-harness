@@ -102,7 +102,7 @@ configure defaultPreset explicitly
 
 ### Provider yapılandırması
 
-Özel bir provider (Ollama Cloud gibi) `llm-pi-ai` satırında bir *route* olarak tanımlanır: `api: openai-completions`, `baseURL`, ve route'un kataloğunu değiştiren bir `models` listesi. Adapter, hiçbir route tanımlı değilken uykudadır ([adapter sözleşmesi](../../../packages/llm/llm-pi-ai/README.md)).
+Özel bir provider `llm-pi-ai` satırında bir *route* olarak tanımlanır: `api` (wire protokolü — `openai-completions`, `openai-responses`, `anthropic-messages`), `baseURL`, ve route'un kataloğunu değiştiren bir `models` listesi. Bu üçlü provider'ı sabitlemez — Ollama Cloud, DeepSeek'in resmi API'si, OpenAI-uyumlu bir gateway ya da başka bir Anthropic-Messages endpoint'i aynı şemaya oturur; hangisi kullanılacağı `DSH_PROVIDER_ID`/`DSH_PROVIDER_API`/`DSH_PROVIDER_BASE_URL` ortam değişkenleriyle seçilir, script'te sabit kodlanmaz. Adapter, hiçbir route tanımlı değilken uykudadır ([adapter sözleşmesi](../../../packages/llm/llm-pi-ai/README.md)).
 
 `apiKeyEnv` bir **credential referansıdır**, anahtarın kendisi değil: istek başına ortamdan çözülür, dosyaya hiçbir sır yazılmaz. Seçilen route/model ayrıca `agent-default-model` satırında belirtilmelidir.
 
@@ -135,12 +135,17 @@ Config değişikliklerini `--dump-config` ile doğrula, varsayma.
 
 | Tip | İsim | Değer |
 |---|---|---|
-| Secret | `OLLAMA_API_KEY` | Provider API key'i |
+| Secret | `DSH_PROVIDER_API_KEY` | Seçili provider'ın API key'i — isim provider'a özel değildir, sağlayıcı değişince secret'ı yeniden adlandırmaya gerek yoktur |
+| Variable (opsiyonel) | `DSH_PROVIDER_ID` | Varsayılan `ollama` — `llm-pi-ai` route adı |
+| Variable (opsiyonel) | `DSH_PROVIDER_BASE_URL` | Varsayılan `https://ollama.com/v1` |
+| Variable (opsiyonel) | `DSH_PROVIDER_API` | Varsayılan `openai-completions` (`openai-responses`, `anthropic-messages` de geçerli) |
 | Variable (opsiyonel) | `DSH_MODEL_ID` | Varsayılan `deepseek-v4-pro:0813` |
 | Variable (opsiyonel) | `DSH_PACKAGE_VERSION` | Sabitlenmiş `dsh` sürümü |
 | Variable (opsiyonel) | `DSH_ALLOWED_LABELS` | Triage'ın uygulayabileceği etiketler |
 | Variable (opsiyonel) | `MAX_DIFF_LINES` | Varsayılan 2500 |
 | Variable (opsiyonel) | `DSH_REVIEW_TIMEOUT_SECONDS` / `DSH_TRIAGE_TIMEOUT_SECONDS` | Varsayılan 600 / 180 |
+
+**Kırıcı değişiklik:** secret adı daha önce `OLLAMA_API_KEY` idi; artık `DSH_PROVIDER_API_KEY`. Bu isimle daha önce bir secret ayarladıysan, workflow'ların çalışması için onu `DSH_PROVIDER_API_KEY` olarak yeniden eklemen gerekir.
 
 `GITHUB_TOKEN` otomatik sağlanır, elle eklenmez — workflow'daki `permissions:` bloğu yeterlidir.
 

@@ -12,13 +12,20 @@
 set -euo pipefail
 
 DSH_PACKAGE="${DSH_PACKAGE:-@deepseek-ai/dsh}"
-DSH_PACKAGE_VERSION="${DSH_PACKAGE_VERSION:-0.1.0-rc.5}"
+DSH_PACKAGE_VERSION="${DSH_PACKAGE_VERSION:-0.1.0-rc.6}"
 DSH_HOME="${DSH_HOME:-$HOME/.dsh}"
 DSH_PROFILE="${DSH_PROFILE:-headless}"
 
+# Provider-agnostic: any pi-ai catalog route or hand-declared OpenAI-compatible /
+# Anthropic-Messages endpoint works, not only Ollama Cloud. Every value below is a
+# knob, not a hardcoded target; the defaults happen to be this fork's current
+# provider. DSH_PROVIDER_KEY_ENV names the environment variable dsh resolves the
+# credential *reference* from at request time — it is deliberately not named after
+# any one provider, so switching providers never means renaming a GitHub secret.
 DSH_PROVIDER_ID="${DSH_PROVIDER_ID:-ollama}"
+DSH_PROVIDER_API="${DSH_PROVIDER_API:-openai-completions}"
 DSH_PROVIDER_BASE_URL="${DSH_PROVIDER_BASE_URL:-https://ollama.com/v1}"
-DSH_PROVIDER_KEY_ENV="${DSH_PROVIDER_KEY_ENV:-OLLAMA_API_KEY}"
+DSH_PROVIDER_KEY_ENV="${DSH_PROVIDER_KEY_ENV:-DSH_PROVIDER_API_KEY}"
 DSH_MODEL_ID="${DSH_MODEL_ID:-deepseek-v4-pro:0813}"
 DSH_MODEL_CONTEXT_WINDOW="${DSH_MODEL_CONTEXT_WINDOW:-131072}"
 DSH_MODEL_MAX_TOKENS="${DSH_MODEL_MAX_TOKENS:-8192}"
@@ -97,7 +104,7 @@ cat > "$patch_file" <<PATCH_EOF
     providers:
       $DSH_PROVIDER_ID:
         apiKeyEnv: $DSH_PROVIDER_KEY_ENV
-        api: openai-completions
+        api: $DSH_PROVIDER_API
         baseURL: $DSH_PROVIDER_BASE_URL
         models:
           - id: $DSH_MODEL_ID
@@ -123,4 +130,4 @@ if ! dsh --profile "$DSH_PROFILE" --dump-config >/dev/null; then
   fail "the composed '$DSH_PROFILE' profile does not load; see the dump-config output above and $patch_file."
 fi
 
-echo "bootstrap-dsh-profile: ready — profile '$DSH_PROFILE', provider '$DSH_PROVIDER_ID', model '$DSH_MODEL_ID'"
+echo "bootstrap-dsh-profile: ready — profile '$DSH_PROFILE', provider '$DSH_PROVIDER_ID' ($DSH_PROVIDER_API @ $DSH_PROVIDER_BASE_URL), model '$DSH_MODEL_ID'"

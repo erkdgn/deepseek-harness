@@ -27,18 +27,25 @@ jobs:
         with:
           node-version: 22
 
+      # Provider-agnostic: DSH_PROVIDER_API_KEY is a generic secret name, not
+      # Ollama-specific, so switching to any other pi-ai route (DeepSeek's own
+      # API, an OpenAI-compatible gateway, an Anthropic-Messages endpoint, …)
+      # is a repository variable change, never a secret rename or a workflow edit.
       - name: Bootstrap the dsh review profile
         env:
-          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          DSH_PROVIDER_API_KEY: ${{ secrets.DSH_PROVIDER_API_KEY }}
+          DSH_PROVIDER_ID: ${{ vars.DSH_PROVIDER_ID || 'ollama' }}
+          DSH_PROVIDER_API: ${{ vars.DSH_PROVIDER_API || 'openai-completions' }}
+          DSH_PROVIDER_BASE_URL: ${{ vars.DSH_PROVIDER_BASE_URL || 'https://ollama.com/v1' }}
           DSH_MODEL_ID: ${{ vars.DSH_MODEL_ID || 'deepseek-v4-pro:0813' }}
-          DSH_PACKAGE_VERSION: ${{ vars.DSH_PACKAGE_VERSION || '0.1.0-rc.5' }}
+          DSH_PACKAGE_VERSION: ${{ vars.DSH_PACKAGE_VERSION || '0.1.0-rc.6' }}
         run: ./scripts/bootstrap-dsh-profile.sh
 
       - name: Triage the issue
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
-          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          DSH_PROVIDER_API_KEY: ${{ secrets.DSH_PROVIDER_API_KEY }}
           ALLOWED_LABELS: ${{ vars.DSH_ALLOWED_LABELS }}
           DSH_TIMEOUT_SECONDS: ${{ vars.DSH_TRIAGE_TIMEOUT_SECONDS || '180' }}
         run: ./scripts/dsh-triage-issue.sh

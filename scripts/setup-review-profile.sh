@@ -8,7 +8,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-key_env="${DSH_PROVIDER_KEY_ENV:-OLLAMA_API_KEY}"
+key_env="${DSH_PROVIDER_KEY_ENV:-DSH_PROVIDER_API_KEY}"
 
 if [ -z "${!key_env:-}" ] && [ -f "$root/.env" ]; then
   value="$(sed -n "s/^[[:space:]]*${key_env}[[:space:]]*=[[:space:]]*//p" "$root/.env" | tail -n1 | sed 's/^"//;s/"$//')"
