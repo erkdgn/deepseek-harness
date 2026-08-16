@@ -1,0 +1,47 @@
+name: DSH PR review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: dsh-pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: DSH review
+    # Secrets are withheld from pull requests opened from a fork, and this job
+    # cannot bootstrap a provider without one.
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the pull request
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Bootstrap the dsh review profile
+        env:
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          DSH_MODEL_ID: ${{ vars.DSH_MODEL_ID || 'deepseek-v4-pro:0813' }}
+          DSH_PACKAGE_VERSION: ${{ vars.DSH_PACKAGE_VERSION || '0.1.0-rc.5' }}
+        run: ./scripts/bootstrap-dsh-profile.sh
+
+      - name: Review the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          MAX_DIFF_LINES: ${{ vars.MAX_DIFF_LINES || '2500' }}
+          DSH_TIMEOUT_SECONDS: ${{ vars.DSH_REVIEW_TIMEOUT_SECONDS || '600' }}
+        run: ./scripts/dsh-review-pr.sh

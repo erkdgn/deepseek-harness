@@ -1,0 +1,44 @@
+name: DSH issue triage
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: dsh-issue-triage-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    name: DSH triage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the scripts
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Bootstrap the dsh review profile
+        env:
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          DSH_MODEL_ID: ${{ vars.DSH_MODEL_ID || 'deepseek-v4-pro:0813' }}
+          DSH_PACKAGE_VERSION: ${{ vars.DSH_PACKAGE_VERSION || '0.1.0-rc.5' }}
+        run: ./scripts/bootstrap-dsh-profile.sh
+
+      - name: Triage the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          ALLOWED_LABELS: ${{ vars.DSH_ALLOWED_LABELS }}
+          DSH_TIMEOUT_SECONDS: ${{ vars.DSH_TRIAGE_TIMEOUT_SECONDS || '180' }}
+        run: ./scripts/dsh-triage-issue.sh
