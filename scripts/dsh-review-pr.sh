@@ -53,7 +53,7 @@ if [ "$diff_lines" -gt "$MAX_DIFF_LINES" ]; then
 fi
 
 if ! title="$(gh pr view "$PR_NUMBER" --json title --jq .title)" \
-  || ! body="$(gh pr view "$PR_NUMBER" --json body --jq .body)"; then
+  || ! body="$(gh pr view "$PR_NUMBER" --json body --jq '.body // ""')"; then
   comment "**DSH review skipped** — the pull request title or description could not be fetched. Review this change by hand."
   exit 0
 fi

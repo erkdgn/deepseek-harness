@@ -36,7 +36,7 @@ existing_file="$(mktemp)"
 trap 'rm -f "$prompt_file" "$report_file" "$error_file" "$existing_file"' EXIT
 
 if ! title="$(gh issue view "$ISSUE_NUMBER" --json title --jq .title)" \
-  || ! body="$(gh issue view "$ISSUE_NUMBER" --json body --jq .body)"; then
+  || ! body="$(gh issue view "$ISSUE_NUMBER" --json body --jq '.body // ""')"; then
   comment "**DSH triage skipped** — the issue title or body could not be fetched. Triage this issue by hand."
   exit 0
 fi
