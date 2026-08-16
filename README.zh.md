@@ -67,6 +67,10 @@ pnpm dsh web
 
 面向 agent：请遵循 [AGENTS.md](AGENTS.md)。
 
+## DSH 驱动的审查自动化
+
+本 fork 还将 `dsh` 自身作为自动化的第二意见来源使用，既支持按需咨询，也接入 CI。手动咨询时，在仓库根目录运行 `dsh --profile headless "<问题>"`，并将代码直接粘贴进 prompt——`dsh` 在调用之间不保留历史。在 `pull_request` 事件上会自动发布一条审查评论；在新开的 Issue 上会提出并应用标签，标签会与本仓库当前实际存在的标签列表进行过滤；两者的每条失败路径都不会阻塞流程。要启用它们，请在 Settings → Secrets and variables → Actions 中配置 `OLLAMA_API_KEY` secret（以及可选的 `DSH_MODEL_ID`、`DSH_ALLOWED_LABELS` 仓库变量）。完整的搭建步骤、prompt 规则与排障方法见 [`dsh-integration` 技能](.agents/skills/dsh-integration/SKILL.md)。
+
 ## 许可证
 
 [MIT](LICENSE)

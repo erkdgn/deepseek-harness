@@ -50,6 +50,10 @@ Start with the [development guide](docs/development.md) and [architecture docume
 
 For agents, follow [AGENTS.md](AGENTS.md).
 
+## DSH-powered review automation
+
+This fork also runs `dsh` itself as an automated second opinion, on demand and in CI. For manual consultation, run `dsh --profile headless "<question>"` from the repository root with the code pasted directly into the prompt — `dsh` keeps no history between calls. On `pull_request` events it posts an automated review comment, and on newly opened issues it proposes and applies labels filtered against this repository's live label list; every failure path there is non-blocking. Enable both by setting the `OLLAMA_API_KEY` secret (and optionally the `DSH_MODEL_ID`, `DSH_ALLOWED_LABELS` repository variables) under Settings → Secrets and variables → Actions. Full setup, prompt rules, and troubleshooting live in the [`dsh-integration` skill](.agents/skills/dsh-integration/SKILL.md).
+
 ## License
 
 [MIT](LICENSE)
