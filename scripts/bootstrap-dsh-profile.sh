@@ -102,19 +102,19 @@ cat > "$patch_file" <<PATCH_EOF
 - id: llm-pi-ai
   config:
     providers:
-      $DSH_PROVIDER_ID:
-        apiKeyEnv: $DSH_PROVIDER_KEY_ENV
-        api: $DSH_PROVIDER_API
-        baseURL: $DSH_PROVIDER_BASE_URL
+      "$DSH_PROVIDER_ID":
+        apiKeyEnv: "$DSH_PROVIDER_KEY_ENV"
+        api: "$DSH_PROVIDER_API"
+        baseURL: "$DSH_PROVIDER_BASE_URL"
         models:
-          - id: $DSH_MODEL_ID
+          - id: "$DSH_MODEL_ID"
             contextWindow: $DSH_MODEL_CONTEXT_WINDOW
             maxTokens: $DSH_MODEL_MAX_TOKENS
 
 - id: agent-default-model
   config:
-    provider: $DSH_PROVIDER_ID
-    model: $DSH_MODEL_ID
+    provider: "$DSH_PROVIDER_ID"
+    model: "$DSH_MODEL_ID"
 
 - id: system-prompt
   config:

@@ -83,11 +83,17 @@ if [ ! -s "$report_file" ]; then
   exit 0
 fi
 
-# The first LABELS line is the machine-readable part; everything else is the summary.
+# The first LABELS line is the machine-readable part; everything else is the
+# summary. Only the first matching line is stripped for the summary too — a
+# later line that happens to start with "LABELS:" (the model quoting the
+# format instructions back, for instance) is prose, not a second directive.
 proposed="$(grep -m1 '^LABELS:' "$report_file" | sed 's/^LABELS:[[:space:]]*//' || true)"
-summary="$(grep -v "^LABELS:" "$report_file" || true)"
+summary="$(awk '!f && /^LABELS:/ { f=1; next } 1' "$report_file" || true)"
 
-gh label list --limit 200 --json name --jq '.[].name' | sort -u > "$existing_file"
+if ! gh label list --limit 200 --json name --jq '.[].name' | sort -u > "$existing_file"; then
+  comment "**DSH triage failed** — the repository label list could not be fetched. Triage this issue by hand."
+  exit 0
+fi
 
 applied=()
 if [ -n "$proposed" ]; then
