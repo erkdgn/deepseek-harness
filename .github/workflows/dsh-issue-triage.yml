@@ -27,11 +27,35 @@ jobs:
         with:
           node-version: 22
 
+      # bootstrap-dsh-profile.sh fails loudly (exit 1) on a missing key, which is
+      # correct for a human running it directly — but this job is advisory and
+      # must never turn red just because the repository secret isn't set yet.
+      # Check first so that case posts a comment and exits 0, like every other
+      # dsh-triage-issue.sh failure path.
+      - name: Check provider key is configured
+        id: provider-key
+        env:
+          DSH_PROVIDER_API_KEY: ${{ secrets.DSH_PROVIDER_API_KEY }}
+        run: |
+          if [ -n "$DSH_PROVIDER_API_KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Note the missing provider key
+        if: steps.provider-key.outputs.configured == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: gh issue comment "$ISSUE_NUMBER" --body "**DSH triage skipped** — the \`DSH_PROVIDER_API_KEY\` repository secret is not set yet. See the \"Set it up\" section of the README to configure it. Triage this issue by hand."
+
       # Provider-agnostic: DSH_PROVIDER_API_KEY is a generic secret name, not
       # Ollama-specific, so switching to any other pi-ai route (DeepSeek's own
       # API, an OpenAI-compatible gateway, an Anthropic-Messages endpoint, …)
       # is a repository variable change, never a secret rename or a workflow edit.
       - name: Bootstrap the dsh review profile
+        if: steps.provider-key.outputs.configured == 'true'
         env:
           DSH_PROVIDER_API_KEY: ${{ secrets.DSH_PROVIDER_API_KEY }}
           DSH_PROVIDER_ID: ${{ vars.DSH_PROVIDER_ID || 'ollama' }}
@@ -42,6 +66,7 @@ jobs:
         run: ./scripts/bootstrap-dsh-profile.sh
 
       - name: Triage the issue
+        if: steps.provider-key.outputs.configured == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}

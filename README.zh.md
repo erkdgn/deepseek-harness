@@ -92,7 +92,7 @@ dsh --profile headless "<question, with the code pasted in full>"
 
 [`dsh-integration` 技能](.agents/skills/dsh-integration/SKILL.md) 是完整的参考文档：该 profile 的 permission/sandbox/approval 配置、确切的 prompt 规则、workflow 与脚本文件，以及排障方法。
 
-这套自动化经过两种方式的验证：针对 stub 化的 `gh`/`dsh`，覆盖了审查与分类脚本的每一条分支（超大 diff、拉取失败、超时、provider 出错、空响应、标签过滤）；以及实际已发布的 `@deepseek-ai/dsh` 包成功安装并组合出这个确切的 profile，并对一个真实的（尽管在受限沙箱中无法连通）provider 发起了真实请求。**尚未在真正的 GitHub Actions 中针对一个可连通的 provider 观察到完整的一次运行**——第一次真实触发可能需要对 bootstrap 做微调；如果某个 job 的第一次运行行为异常，请检查 Actions 日志。
+这套自动化经过三种方式的验证：针对 stub 化的 `gh`/`dsh`，覆盖了审查与分类脚本的每一条分支（超大 diff、拉取失败、超时、provider 出错、空响应、标签过滤）；实际已发布的 `@deepseek-ai/dsh` 包成功安装并组合出这个确切的 profile，并对一个真实的（尽管在受限沙箱中无法连通）provider 发起了真实请求；以及在本仓库自己的 GitHub Actions 中、secret 尚未配置时的一次真实触发——这次触发暴露了一个真实的缺口（缺少 secret 会让 job 直接失败，而不是发布一条提示性评论），该问题现已修复。**尚未针对一个真正可连通的 provider 观察到完整的一次运行**；按上文配置好 secret 即可观察到；如果那次运行行为异常，请检查 Actions 日志。
 
 ## 社区与支持
 

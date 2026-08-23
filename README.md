@@ -88,7 +88,7 @@ Run this from the repository root. `dsh` keeps no history between calls, so past
 
 The [`dsh-integration` skill](.agents/skills/dsh-integration/SKILL.md) is the full reference: the profile's permission/sandbox/approval configuration, the exact prompt rules, the workflow and script files, and troubleshooting.
 
-This automation has been verified two ways: every branch of the review and triage scripts (oversized diff, fetch failure, timeout, provider error, empty response, label filtering) against stubbed `gh`/`dsh`, and the actual published `@deepseek-ai/dsh` package installing and composing this exact profile successfully against a real (if unreachable, from a restricted sandbox) provider request. **A full run against a live provider inside real GitHub Actions has not yet been observed** — the first real trigger may need a bootstrap tweak; check the Actions log if a job's very first run behaves unexpectedly.
+This automation has been verified three ways: every branch of the review and triage scripts (oversized diff, fetch failure, timeout, provider error, empty response, label filtering) against stubbed `gh`/`dsh`; the actual published `@deepseek-ai/dsh` package installing and composing this exact profile successfully against a real (if unreachable, from a restricted sandbox) provider request; and a real trigger inside this repository's own GitHub Actions, before the secret was ever set — which surfaced a real gap (a missing secret failed the job outright instead of posting an advisory comment) that has since been fixed. **A run against a live, reachable provider has still not been observed**; set the secret described above to see one, and check the Actions log if that first run behaves unexpectedly.
 
 ## Community and support
 
