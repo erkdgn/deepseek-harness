@@ -1,0 +1,80 @@
+name: DSH PR review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: dsh-pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: DSH review
+    # Secrets are withheld from pull requests opened from a fork, and this job
+    # cannot bootstrap a provider without one.
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the pull request
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      # bootstrap-dsh-profile.sh fails loudly (exit 1) on a missing key, which is
+      # correct for a human running it directly — but this job is advisory and
+      # must never turn red just because the repository secret isn't set yet.
+      # Check first so that case posts a comment and exits 0, like every other
+      # dsh-review-pr.sh failure path.
+      - name: Check provider key is configured
+        id: provider-key
+        env:
+          DSH_PROVIDER_API_KEY: ${{ secrets.DSH_PROVIDER_API_KEY }}
+        run: |
+          if [ -n "$DSH_PROVIDER_API_KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Note the missing provider key
+        if: steps.provider-key.outputs.configured == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr comment "$PR_NUMBER" --body "**DSH review skipped** — the \`DSH_PROVIDER_API_KEY\` repository secret is not set yet. See the \"Set it up\" section of the README to configure it. Review this change by hand."
+
+      # Provider-agnostic: DSH_PROVIDER_API_KEY is a generic secret name, not
+      # Ollama-specific, so switching to any other pi-ai route (DeepSeek's own
+      # API, an OpenAI-compatible gateway, an Anthropic-Messages endpoint, …)
+      # is a repository variable change, never a secret rename or a workflow edit.
+      - name: Bootstrap the dsh review profile
+        if: steps.provider-key.outputs.configured == 'true'
+        env:
+          DSH_PROVIDER_API_KEY: ${{ secrets.DSH_PROVIDER_API_KEY }}
+          DSH_PROVIDER_ID: ${{ vars.DSH_PROVIDER_ID || 'ollama' }}
+          DSH_PROVIDER_API: ${{ vars.DSH_PROVIDER_API || 'openai-completions' }}
+          DSH_PROVIDER_BASE_URL: ${{ vars.DSH_PROVIDER_BASE_URL || 'https://ollama.com/v1' }}
+          DSH_MODEL_ID: ${{ vars.DSH_MODEL_ID || 'deepseek-v4-pro:0813' }}
+          DSH_PACKAGE_VERSION: ${{ vars.DSH_PACKAGE_VERSION || '0.1.0-rc.6' }}
+        run: ./scripts/bootstrap-dsh-profile.sh
+
+      - name: Review the pull request
+        if: steps.provider-key.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          DSH_PROVIDER_API_KEY: ${{ secrets.DSH_PROVIDER_API_KEY }}
+          MAX_DIFF_LINES: ${{ vars.MAX_DIFF_LINES || '2500' }}
+          MAX_PROMPT_BYTES: ${{ vars.MAX_PROMPT_BYTES || '100000' }}
+          DSH_TIMEOUT_SECONDS: ${{ vars.DSH_REVIEW_TIMEOUT_SECONDS || '600' }}
+        run: ./scripts/dsh-review-pr.sh
