@@ -1,6 +1,8 @@
 # DeepSeek Harness
 
-English | [中文](README.zh.md) | [Türkçe](README.tr.md)
+English | [中文](README.zh.md)
+
+Also available in [Türkçe](README.tr.md).
 
 DeepSeek Harness (`dsh`) is an open-source, general-purpose coding agent: it reads and edits files in a project, runs shell commands, delegates sub-tasks, and keeps a plan, the way Claude Code or a similar agent does. You run it either as a local Web UI or as a one-shot headless command, and you point it at a model provider of your choice by supplying that provider's API key — DeepSeek Harness never ships or requires a key of its own.
 
@@ -22,7 +24,7 @@ Node.js 22.19+ or 24+ is required (see `engines` in [package.json](package.json)
 npx @deepseek-ai/dsh web
 ```
 
-The command downloads and starts `dsh`, serving the Web UI at `http://127.0.0.1:3080` by default. Open that address in a browser.
+The command downloads and starts `dsh`, serving the Web UI at `http://127.0.0.1:3080` by default and opening it in the default browser for a local launch. An SSH launch only prints the host URL because the SSH client or editor owns the local forwarded address. Pass `--no-open` to run the server without opening a browser. See the [Web UI guide](docs/user/guide/index.md).
 
 ### 3. Add a model provider
 
@@ -44,7 +46,7 @@ pnpm run build
 pnpm dsh web
 ```
 
-See the [development guide](docs/development.md) for the full contributor setup and daily workflow.
+`pnpm run build` prepares the repository artifacts, and `pnpm dsh web` uses those built artifacts without rebuilding. See the [development guide](docs/development.md) for the full contributor setup and daily workflow.
 
 ## What this fork adds
 

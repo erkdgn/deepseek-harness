@@ -1,6 +1,8 @@
 # DeepSeek Harness
 
-[English](README.md) | 中文 | [Türkçe](README.tr.md)
+[English](README.md) | 中文
+
+也提供 [Türkçe](README.tr.md) 版本。
 
 DeepSeek Harness（`dsh`）是一个开源的通用编码 agent（智能体）：它能读写项目中的文件、运行 shell 命令、委派子任务、并维护一份计划，就像 Claude Code 或类似的 agent 那样工作。你可以把它作为本地 Web UI 运行，也可以作为一次性的 headless 命令运行；你需要提供所选模型 provider 自己的 API key 来指向它——DeepSeek Harness 本身不附带、也不需要自己的 key。
 
@@ -9,6 +11,8 @@ DeepSeek Harness（`dsh`）是一个开源的通用编码 agent（智能体）�
 ## 开发者预览
 
 DeepSeek Harness 目前处于 _开发者预览_ 阶段，正在快速迭代。**未来将出现破坏兼容性的变更。**
+
+<a id="run"></a>
 
 ## 运行
 
@@ -22,15 +26,17 @@ DeepSeek Harness 目前处于 _开发者预览_ 阶段，正在快速迭代。**
 npx @deepseek-ai/dsh web
 ```
 
-该命令会下载并启动 `dsh`，默认在 `http://127.0.0.1:3080` 提供 Web UI。在浏览器中打开该地址。
+该命令会下载并启动 `dsh`，默认在 `http://127.0.0.1:3080` 提供 Web UI，本机启动时还会用默认浏览器打开页面。通过 SSH 启动时只打印宿主机 URL，因为本地转发地址由 SSH 客户端或编辑器持有。传入 `--no-open` 可仅运行服务器而不打开浏览器。详见 [Web UI 指南](docs/user/guide/index.zh.md)。
 
 ### 3. 添加模型 provider
 
-在 Web UI 中打开 **Settings → Models**，为某个受支持的 provider 输入 API key——可以是 DeepSeek 自己的 API，也可以是 Anthropic、OpenAI 等其他 provider，或者一个自建的／OpenAI 兼容的网关。[模型配置指南](docs/user/guide/providers.md) 覆盖了每一种受支持的形态，包括自定义 provider。
+在 Web UI 中打开 **Settings → Models**，为某个受支持的 provider 输入 API key——可以是 DeepSeek 自己的 API，也可以是 Anthropic、OpenAI 等其他 provider，或者一个自建的／OpenAI 兼容的网关。[模型配置指南](docs/user/guide/providers.zh.md) 覆盖了每一种受支持的形态，包括自定义 provider。
 
 ### 4. 选择工作区并运行任务
 
-点击 **Choose workspace**，添加 `dsh` 启动时所在的项目目录，然后开始一个会话并发送一个任务，例如「总结这个仓库并识别它的主要包」。agent 会读写工作区中的文件、运行命令，并在需要时按照当前生效的权限策略请求批准。完整流程见 [Web UI 指南](docs/user/guide/index.md)。
+点击 **Choose workspace**，添加 `dsh` 启动时所在的项目目录，然后开始一个会话并发送一个任务，例如「总结这个仓库并识别它的主要包」。agent 会读写工作区中的文件、运行命令，并在需要时按照当前生效的权限策略请求批准。完整流程见 [Web UI 指南](docs/user/guide/index.zh.md)。
+
+<a id="run-from-source"></a>
 
 ## 从源码运行
 
@@ -44,7 +50,7 @@ pnpm run build
 pnpm dsh web
 ```
 
-完整的贡献者搭建与日常工作流见[开发指南](docs/development.md)。
+`pnpm run build` 会准备仓库产物，`pnpm dsh web` 会直接使用这些已构建产物，不会重新构建。完整的贡献者搭建与日常工作流见[开发指南](docs/development.zh.md)。
 
 ## 本 fork 新增内容
 
@@ -94,11 +100,11 @@ dsh --profile headless "<question, with the code pasted in full>"
 
 ## 参与贡献
 
-参见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+参见 [CONTRIBUTING.md](CONTRIBUTING.zh.md)。
 
 ## 开发
 
-请先阅读[开发指南](docs/development.md)与[架构文档](docs/architecture.md)。
+请先阅读[开发指南](docs/development.zh.md)与[架构文档](docs/architecture.zh.md)。
 
 面向 agent：请遵循 [AGENTS.md](AGENTS.md)。
 
